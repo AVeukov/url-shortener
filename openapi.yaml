@@ -1,0 +1,77 @@
+openapi: 3.1.0
+info:
+  title: URL Shortener API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/urls:
+    post:
+      summary: Create a short link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                custom_alias:
+                  type: string
+                  minLength: 4
+                  maxLength: 32
+                expires_in_seconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 31536000
+      responses:
+        "201":
+          description: Link created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+        "400": {description: Invalid request}
+        "409": {description: Alias already exists}
+  /api/v1/urls/{code}:
+    get:
+      summary: Get link information and click count
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: Link information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+        "404": {description: Link not found or expired}
+  /{code}:
+    get:
+      summary: Redirect to the original URL
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "302": {description: Redirect}
+        "404": {description: Link not found or expired}
+components:
+  schemas:
+    Link:
+      type: object
+      required: [code, url, created_at, click_count, short_url]
+      properties:
+        code: {type: string}
+        url: {type: string, format: uri}
+        created_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time}
+        click_count: {type: integer}
+        short_url: {type: string, format: uri}
